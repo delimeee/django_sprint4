@@ -53,8 +53,8 @@ class UserRegistrationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        template_name='registration/registration_form.html'
-        success_url=reverse_lazy('blog:index')
+        template_name = 'registration/registration_form.html'
+        success_url = reverse_lazy('blog:index')
         fields = (
             'username',
             'first_name',
@@ -69,5 +69,5 @@ class UserRegistrationForm(UserCreationForm):
 
         if username in forbidden:
             raise ValidationError(f'Запрещено имя: {username}')
-        
+
         return username
