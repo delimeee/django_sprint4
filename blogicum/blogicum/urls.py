@@ -17,12 +17,11 @@ from django.contrib import admin
 from django.urls import path, include, reverse_lazy
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
-from ..blog.forms import UserRegistrationForm
+from blog.forms import UserRegistrationForm
 
-handler404 = 'core.views.page_not_found'
-handler500 = 'core.views.server_failure'
+handler404 = 'pages.views.page_not_found'
+handler500 = 'pages.views.server_failure'
 
 urlpatterns = [
     path(

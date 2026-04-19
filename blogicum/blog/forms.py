@@ -1,5 +1,6 @@
 from django import forms
 from .models import Post, Comment
+from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
@@ -52,6 +53,8 @@ class UserRegistrationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
+        template_name='registration/registration_form.html'
+        success_url=reverse_lazy('blog:index')
         fields = (
             'username',
             'first_name',
