@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m4!aa$-%2&dxv2vw=e+7otowhz9-b!a)d!ug%$kfp3+l1bt@=j'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -153,3 +153,5 @@ LOGIN_REDIRECT_URL = 'blog:index'
 LOGIN_URL = 'login'
 
 MEDIA_ROOT = BASE_DIR / 'media'
+
+USE_L10N = False

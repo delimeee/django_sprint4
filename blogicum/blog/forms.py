@@ -16,6 +16,7 @@ class PostForm(forms.ModelForm):
             'pub_date',
             'location',
             'category',
+            'is_published',
             'image',
         )
         widgets = {

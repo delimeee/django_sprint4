@@ -1,13 +1,10 @@
-# from django.shortcuts import render
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
 from .models import Post, Category, Comment
 from .forms import PostForm, CommentForm
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count
 from django.views.generic import (
     ListView,
     DetailView,
@@ -15,6 +12,7 @@ from django.views.generic import (
     CreateView,
     UpdateView,
 )
+from .utils import get_paginated_objects
 
 
 User = get_user_model()
@@ -52,12 +50,10 @@ class PostListView(ListView):
 
     def get_queryset(self):
         return (
-            Post.objects.filter(
-                is_published=True,
-                pub_date__lte=timezone.now(),
-                category__is_published=True,
-            )
-            .annotate(comment_count=Count("comments"))
+            Post
+            .objects
+            .published()
+            .with_comment_count()
             .order_by("-pub_date")
         )
 
@@ -68,11 +64,7 @@ class PostDetailView(DetailView):
     pk_url_kwarg = "post_id"
 
     def get_queryset(self):
-        qs = Post.objects.filter(
-            is_published=True,
-            pub_date__lte=timezone.now(),
-            category__is_published=True
-        )
+        qs = Post.objects.published()
 
         if self.request.user.is_authenticated:
             qs = qs | Post.objects.filter(author=self.request.user)
@@ -82,13 +74,13 @@ class PostDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        comments = Comment.objects.filter(
-            post=self.get_object()).order_by("created_at")
-        paginator = Paginator(comments, 10)
-        page_number = self.request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
-        context["comments"] = page_obj
-
+        context["comments"] = get_paginated_objects(
+            Comment.objects.filter(
+                post=self.get_object()
+            )
+            .order_by("created_at"),
+            self.request,
+        )
         context["form"] = CommentForm()
         return context
 
@@ -169,7 +161,6 @@ class CategoryListView(ListView):
     model = Post
     template_name = "blog/category.html"
     paginate_by = 10
-    category = None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -180,13 +171,9 @@ class CategoryListView(ListView):
 
     def get_queryset(self):
         return (
-            Post.objects.filter(
-                category__slug=self.kwargs["category_slug"],
-                is_published=True,
-                pub_date__lte=timezone.now(),
-                category__is_published=True,
-            )
-            .annotate(comment_count=Count("comments"))
+            Post.objects.published()
+            .filter(category__slug=self.kwargs["category_slug"])
+            .with_comment_count()
             .order_by("-pub_date")
         )
 
@@ -214,27 +201,17 @@ class ProfileDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        author = self.get_object()
 
-        if self.request.user == self.get_object():
-            posts = (
-                Post.objects.filter(author=self.get_object())
-                .annotate(comment_count=Count("comments"))
-                .order_by("-pub_date")
-            )
-        else:
-            posts = (
-                Post.objects.filter(
-                    author=self.get_object(),
-                    is_published=True,
-                    pub_date__lte=timezone.now(),
-                    category__is_published=True,
-                )
-                .annotate(comment_count=Count("comments"))
-                .order_by("-pub_date")
-            )
+        posts = (
+            Post.objects.filter(author=author)
+            .with_comment_count().order_by('-pub_date')
+        )
+        if self.request.user != author:
+            posts = posts.published()
 
-        paginator = Paginator(posts, 10)
-        page_number = self.request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
-        context["page_obj"] = page_obj
+        context["page_obj"] = get_paginated_objects(
+            posts,
+            self.request,
+        )
         return context

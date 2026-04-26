@@ -1,5 +1,19 @@
 from django.db import models
+from django.db.models import Count
+from django.utils import timezone
 from django.contrib.auth import get_user_model
+
+
+class PostQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(
+            is_published=True,
+            pub_date__lte=timezone.now(),
+            category__is_published=True
+        )
+
+    def with_comment_count(self):
+        return self.annotate(comment_count=Count("comments"))
 
 
 class DatePublicationModel(models.Model):
@@ -62,6 +76,7 @@ class Post(DatePublicationModel, TitledModel):
         upload_to='images',
         blank=True
     )
+    objects = PostQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'публикация'
@@ -117,6 +132,7 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments'
     )
+    objects = PostQuerySet.as_manager()
 
     class Meta:
         ordering = ['-created_at']
